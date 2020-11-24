@@ -137,7 +137,7 @@ int main(int argc, char* argv[])
     apriltag_detector_t* td = apriltag_detector_create();
     // 添加需要进行识别的Tag family，可以添加多个
     apriltag_detector_add_family(td, tf_tag36h11);
-    // apriltag_detector_add_family(td, tf_tagCustom48h12);
+    apriltag_detector_add_family(td, tf_tagCustom48h12);
 
     td->quad_decimate = getopt_get_double(getopt, "decimate");
     td->quad_sigma = getopt_get_double(getopt, "blur");
@@ -176,325 +176,364 @@ int main(int argc, char* argv[])
     }
     // 调试END    
     apriltag_detection_t* det;
-    while (true) {
-        framestamps ++;  
-        time_sec = framestamps/framerate;
-        clock_minute = time_sec/60;
-        clock_sec = time_sec%60;
-        cap >> frame;
-
-        if (time_sec < time_sec_start){
-            if (framestamps%(10*framerate) == 0)
+    try
+    {    
+        while (true) {
+            framestamps ++;  
+            time_sec = framestamps/framerate;
+            clock_minute = time_sec/60;
+            clock_sec = time_sec%60;
+            try
             {
-                cout << "skip image: " << clock_minute << " min" << clock_sec << " sec\t\t";
-                cout << "( work after  " << min0 << " min" << sec0 << " sec )" << endl;
-            }
-            continue;
-        }
-
-        cvtColor(frame, gray, COLOR_BGR2GRAY); // 将原始图像转换为灰度图
-
-        // Make an image_u8_t header for the Mat data
-        image_u8_t im = { .width = gray.cols,
-            .height = gray.rows,
-            .stride = gray.cols,
-            .buf = gray.data
-        };
-
-        // 调试START
-        if (FeimaTagDebug.detail_func_process) {
-            printf("frame %d  ( apriltag_detector_detect )\n",frameidx);
-        }
-        // 调试END    
-        // ||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||
-        // ||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||
-        // *****************************************************  核心函数  *******************************************************
-        std::chrono::steady_clock::time_point t1 = std::chrono::steady_clock::now();
-        zarray_t* detections = apriltag_detector_detect(td, &im);
-        std::chrono::steady_clock::time_point t2 = std::chrono::steady_clock::now();
-        // ************************************************************************************************************************
-        // ||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||
-        // ||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||
-        FeimaTagOutput.timePerFrame = std::chrono::duration_cast<std::chrono::duration<double> >(t2 - t1).count();
-        if(duPerFrame>1)
-        {
-            // cout << "image :" << vstrImageFilenames[seq][ni] << "\t\t";
-            // cout << "frame rate: " << frameRate << "\t\t(" << duPerFrame << "sec )" << endl;
-            duPerFrame = 0.0;
-            FeimaTagOutput.frameRate = rtFrameRate;
-            rtFrameRate = 0;
-        }
-        else
-        {
-            rtFrameRate++;
-            duPerFrame += FeimaTagOutput.timePerFrame;
-        }
-        FeimaTagOutput.nDetect = zarray_size(detections);
-        if (FeimaTagOutput.nDetect>0){
-            FeimaTagOutput.idxValid ++;
-            FeimaTagOutput.validFlag = true;
-        }
-        else{
-            FeimaTagOutput.idxInvalid ++;
-            FeimaTagOutput.validFlag = false;
-        }
-        // 调试START
-        char spaceStrPerFrame2tab[] = "\t\t ";
-        char spaceStrPerFrame3tab[] = "\t\t\t ";
-        frameidx++;
-        if (FeimaTagDebug.basic_show) {
-            cout << "\t 帧 " << frameidx << "\t( 帧率 " << FeimaTagOutput.frameRate << " )" <<  endl;
-            cout << spaceStrPerFrame2tab << "检测到tag个数: " << FeimaTagOutput.nDetect << endl;
-        }
-        // 调试END         
-
-        // First create an apriltag_detection_info_t struct using your known parameters.
-        apriltag_detection_info_t infoDetection;
-
-        infoDetection.fx = feimaCameraConfig.fx;
-        infoDetection.fy = feimaCameraConfig.fy;
-        infoDetection.cx = feimaCameraConfig.cx;
-        infoDetection.cy = feimaCameraConfig.cy;
-
-        FeimaTagOutput.Tags.isDetect = false;
-        FeimaTagOutput.Tagm.isDetect = false;
-        FeimaTagOutput.Tagl.isDetect = false;
-        // Draw detection outlines
-        for (int i = 0; i < FeimaTagOutput.nDetect; i++) {
-            zarray_get(detections, i, &det);
-            infoDetection.det = det;
-
-            double err;
-            TagInfo tempTagInfo;
-            apriltag_pose_t pose;
-            // calculate small tag pose
-            tempTagInfo.isDetect = false;
-            if (det->id == feimaTagConfig.idTags && !strcmp(det->family->name,feimaTagConfig.familyNameTags))
-            {
-                tempTagInfo.isDetect = true;
-                infoDetection.tagsize = feimaTagConfig.sizeTags; // 米
-                err = estimate_tag_pose(&infoDetection, &pose);
-                
-                for (int i = 0; i != 9; i++) {
-                    tempTagInfo.Rcl[i] = pose.R->data[i];
+                cap >> frame;
+                if (frame.empty()){
+                    cout << "第 " << framestamps << " 帧 empty. " << endl;
+                    continue;
                 }
-                dcm2angle(tempTagInfo.Rcl, 321, &rolld, &pitchd, &yawd);
-                tempTagInfo.eulerdcl[0] = yawd;
-                tempTagInfo.eulerdcl[1] = pitchd;
-                tempTagInfo.eulerdcl[2] = rolld;
-                for (int i = 0; i != 3; i++){
-                    tempTagInfo.tcl[i] = pose.t->data[i];
-                }                
-                FeimaTagOutput.Tags = tempTagInfo;
+                    
             }
-            FeimaTagOutput.Tags.isDetect = tempTagInfo.isDetect;  
-            // calculate middle tag pose
-            tempTagInfo.isDetect = false;
-            if (det->id == feimaTagConfig.idTagm && !strcmp(det->family->name,feimaTagConfig.familyNameTagm))
+            catch(const std::exception& e)
             {
-                tempTagInfo.isDetect = true;
-                infoDetection.tagsize = feimaTagConfig.sizeTagm; // 米
-                err = estimate_tag_pose(&infoDetection, &pose);
-
-                for (int i = 0; i != 9; i++) {
-                    tempTagInfo.Rcl[i] = pose.R->data[i];
-                }
-                dcm2angle(tempTagInfo.Rcl, 321, &rolld, &pitchd, &yawd);
-                tempTagInfo.eulerdcl[0] = yawd;
-                tempTagInfo.eulerdcl[1] = pitchd;
-                tempTagInfo.eulerdcl[2] = rolld;
-                for (int i = 0; i != 3; i++){
-                    tempTagInfo.tcl[i] = pose.t->data[i];
-                }                
-                FeimaTagOutput.Tagm = tempTagInfo;
+                int sl = 1;
+                std::cerr << e.what() << '\n';
             }
-            FeimaTagOutput.Tagm.isDetect = tempTagInfo.isDetect;  
-            // calculate large tag pose
-            tempTagInfo.isDetect = false;
-            if (det->id == feimaTagConfig.idTagl && !strcmp(det->family->name,feimaTagConfig.familyNameTagl))
-            {
-                tempTagInfo.isDetect = true;
-                infoDetection.tagsize = feimaTagConfig.sizeTagl; // 米
-                err = estimate_tag_pose(&infoDetection, &pose);
+            
+            
 
-                for (int i = 0; i != 9; i++) {
-                    tempTagInfo.Rcl[i] = pose.R->data[i];
+            if (time_sec < time_sec_start){
+                if (framestamps%(10*framerate) == 0)
+                {
+                    cout << "skip image: " << clock_minute << " min" << clock_sec << " sec\t\t";
+                    cout << "( work after  " << min0 << " min" << sec0 << " sec )" << endl;
                 }
-                dcm2angle(tempTagInfo.Rcl, 321, &rolld, &pitchd, &yawd);
-                tempTagInfo.eulerdcl[0] = yawd;
-                tempTagInfo.eulerdcl[1] = pitchd;
-                tempTagInfo.eulerdcl[2] = rolld;
-                for (int i = 0; i != 3; i++){
-                    tempTagInfo.tcl[i] = pose.t->data[i];
-                }                
-                FeimaTagOutput.Tagl = tempTagInfo;             
-            }
-            FeimaTagOutput.Tagl.isDetect = tempTagInfo.isDetect;  
-
-            if ((!FeimaTagOutput.Tags.isDetect) && (!FeimaTagOutput.Tagm.isDetect) && (!FeimaTagOutput.Tagl.isDetect)){
-                cout << "unexpected tag is detected!" << endl;
                 continue;
             }
 
+            cvtColor(frame, gray, COLOR_BGR2GRAY); // 将原始图像转换为灰度图
+
+            // Make an image_u8_t header for the Mat data
+            image_u8_t im = { .width = gray.cols,
+                .height = gray.rows,
+                .stride = gray.cols,
+                .buf = gray.data
+            };
+
             // 调试START
-            if (FeimaTagDebug.basic_show) {
-                cout << spaceStrPerFrame2tab << "提取Tag检测结果 " << i + 1 << "/" << zarray_size(detections) << ":\t" << det->family->name << "\t" << det->id << endl;
-               
-                // disp_H(det->H, spaceStrPerFrame3tab);
-                disp_R_t(pose.R, pose.t, spaceStrPerFrame3tab);
-                disp_euler(tempTagInfo.eulerdcl[2], tempTagInfo.eulerdcl[1], tempTagInfo.eulerdcl[0], spaceStrPerFrame3tab);
+            if (FeimaTagDebug.detail_func_process) {
+                printf("frame %d  ( apriltag_detector_detect )\n",frameidx);
             }
             // 调试END    
+            // ||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||
+            // ||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||
+            // ||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||
+            // ||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||
+            // ||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||
+            // ||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||      
+            // ||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||
+            // ||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||
+            // ||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||
+            // ||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||
+            // ||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||
+            // ||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||                   
+            // *****************************************************  核心函数  *******************************************************
+            std::chrono::steady_clock::time_point t1 = std::chrono::steady_clock::now();
 
+            zarray_t* detections = apriltag_detector_detect(td, &im);
+
+            std::chrono::steady_clock::time_point t2 = std::chrono::steady_clock::now();
+            // ************************************************************************************************************************
+            // ||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||
+            // ||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||
+            // ||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||
+            // ||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||
+            // ||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||
+            // ||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||      
+            // ||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||
+            // ||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||
+            // ||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||
+            // ||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||
+            // ||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||
+            // |||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||| 
+            FeimaTagOutput.timePerFrame = std::chrono::duration_cast<std::chrono::duration<double> >(t2 - t1).count();
+            if(duPerFrame>1)
+            {
+                // cout << "image :" << vstrImageFilenames[seq][ni] << "\t\t";
+                // cout << "frame rate: " << frameRate << "\t\t(" << duPerFrame << "sec )" << endl;
+                duPerFrame = 0.0;
+                FeimaTagOutput.frameRate = rtFrameRate;
+                rtFrameRate = 0;
+            }
+            else
+            {
+                rtFrameRate++;
+                duPerFrame += FeimaTagOutput.timePerFrame;
+            }
+            FeimaTagOutput.nDetect = zarray_size(detections);
+            if (FeimaTagOutput.nDetect>0){
+                FeimaTagOutput.idxValid ++;
+                FeimaTagOutput.validFlag = true;
+            }
+            else{
+                FeimaTagOutput.idxInvalid ++;
+                FeimaTagOutput.validFlag = false;
+            }
+            // 调试START
+            char spaceStrPerFrame2tab[] = "\t\t ";
+            char spaceStrPerFrame3tab[] = "\t\t\t ";
+            frameidx++;
+            if (FeimaTagDebug.basic_show) {
+                cout << "\t 帧 " << frameidx << "\t( 帧率 " << FeimaTagOutput.frameRate << " )" <<  endl;
+                cout << spaceStrPerFrame2tab << "检测到tag个数: " << FeimaTagOutput.nDetect << endl;
+            }
+            if (frameidx == 3180)
+                int pause = 1;
+            // 调试END         
+
+            // First create an apriltag_detection_info_t struct using your known parameters.
+            apriltag_detection_info_t infoDetection;
+
+            infoDetection.fx = feimaCameraConfig.fx;
+            infoDetection.fy = feimaCameraConfig.fy;
+            infoDetection.cx = feimaCameraConfig.cx;
+            infoDetection.cy = feimaCameraConfig.cy;
+
+            FeimaTagOutput.Tags.isDetect = false;
+            FeimaTagOutput.Tagm.isDetect = false;
+            FeimaTagOutput.Tagl.isDetect = false;
+            // Draw detection outlines
+            for (int i = 0; i < FeimaTagOutput.nDetect; i++) {
+                zarray_get(detections, i, &det);
+                infoDetection.det = det;
+
+                double err;
+                TagInfo tempTagInfo;
+                apriltag_pose_t pose;
+                // calculate small tag pose
+                if (det->id == feimaTagConfig.idTags && !strcmp(det->family->name,feimaTagConfig.familyNameTags))
+                {
+                    FeimaTagOutput.Tags.isDetect = true;
+                    infoDetection.tagsize = feimaTagConfig.sizeTags; // 米
+                    err = estimate_tag_pose(&infoDetection, &pose);
+                    
+                    for (int i = 0; i != 9; i++) {
+                        FeimaTagOutput.Tags.Rcl[i] = pose.R->data[i];
+                    }
+                    dcm2angle(FeimaTagOutput.Tags.Rcl, 321, &rolld, &pitchd, &yawd);
+                    FeimaTagOutput.Tags.eulerdcl[0] = yawd;
+                    FeimaTagOutput.Tags.eulerdcl[1] = pitchd;
+                    FeimaTagOutput.Tags.eulerdcl[2] = rolld;
+                    for (int i = 0; i != 3; i++){
+                        FeimaTagOutput.Tags.tcl[i] = pose.t->data[i];
+                    }                
+                    tempTagInfo = FeimaTagOutput.Tags;
+                }
+                // calculate middle tag pose
+                if (det->id == feimaTagConfig.idTagm && !strcmp(det->family->name,feimaTagConfig.familyNameTagm))
+                {
+                    FeimaTagOutput.Tagm.isDetect = true;
+                    infoDetection.tagsize = feimaTagConfig.sizeTagm; // 米
+                    err = estimate_tag_pose(&infoDetection, &pose);
+
+                    for (int i = 0; i != 9; i++) {
+                        FeimaTagOutput.Tagm.Rcl[i] = pose.R->data[i];
+                    }
+                    dcm2angle(FeimaTagOutput.Tagm.Rcl, 321, &rolld, &pitchd, &yawd);
+                    FeimaTagOutput.Tagm.eulerdcl[0] = yawd;
+                    FeimaTagOutput.Tagm.eulerdcl[1] = pitchd;
+                    FeimaTagOutput.Tagm.eulerdcl[2] = rolld;
+                    for (int i = 0; i != 3; i++){
+                        FeimaTagOutput.Tagm.tcl[i] = pose.t->data[i];
+                    }          
+                    tempTagInfo = FeimaTagOutput.Tagm;      
+                }
+                // calculate large tag pose
+                if (det->id == feimaTagConfig.idTagl && !strcmp(det->family->name,feimaTagConfig.familyNameTagl))
+                {
+                    FeimaTagOutput.Tagl.isDetect = true;
+                    infoDetection.tagsize = feimaTagConfig.sizeTagl; // 米
+                    err = estimate_tag_pose(&infoDetection, &pose);
+
+                    for (int i = 0; i != 9; i++) {
+                        FeimaTagOutput.Tagl.Rcl[i] = pose.R->data[i];
+                    }
+                    dcm2angle(FeimaTagOutput.Tagl.Rcl, 321, &rolld, &pitchd, &yawd);
+                    FeimaTagOutput.Tagl.eulerdcl[0] = yawd;
+                    FeimaTagOutput.Tagl.eulerdcl[1] = pitchd;
+                    FeimaTagOutput.Tagl.eulerdcl[2] = rolld;
+                    for (int i = 0; i != 3; i++){
+                        FeimaTagOutput.Tagl.tcl[i] = pose.t->data[i];
+                    }                
+                    tempTagInfo = FeimaTagOutput.Tagl;
+                }
+                if ((!FeimaTagOutput.Tags.isDetect) && (!FeimaTagOutput.Tagm.isDetect) && (!FeimaTagOutput.Tagl.isDetect)){
+                    cout << "unexpected tag is detected!" << endl;
+                    continue;
+                }
+
+                // 调试START
+                if (FeimaTagDebug.basic_show) {
+                    cout << spaceStrPerFrame2tab << "提取Tag检测结果 " << i + 1 << "/" << zarray_size(detections) << ":\t" << det->family->name << "\t" << det->id << endl;
+                
+                    // disp_H(det->H, spaceStrPerFrame3tab);
+                    disp_R_t(pose.R, pose.t, spaceStrPerFrame3tab);
+                    disp_euler(tempTagInfo.eulerdcl[2], tempTagInfo.eulerdcl[1], tempTagInfo.eulerdcl[0], spaceStrPerFrame3tab);
+                }
+                // 调试END    
+
+                // 图片标注
+                if (FeimaTagDebug.imshow){
+                    line(frame, Point(det->p[0][0], det->p[0][1]),
+                        Point(det->p[1][0], det->p[1][1]),
+                        Scalar(0, 0xff, 0), 2);
+                    line(frame, Point(det->p[0][0], det->p[0][1]),
+                        Point(det->p[3][0], det->p[3][1]),
+                        Scalar(0, 0, 0xff), 2);
+                    line(frame, Point(det->p[1][0], det->p[1][1]),
+                        Point(det->p[2][0], det->p[2][1]),
+                        Scalar(0xff, 0, 0), 2);
+                    line(frame, Point(det->p[2][0], det->p[2][1]),
+                        Point(det->p[3][0], det->p[3][1]),
+                        Scalar(0xff, 0, 0), 2);
+                        
+                    // stringstream ss_id;
+                    // stringstream ss_t;
+                    // stringstream ss_R_row1;
+                    // stringstream ss_R_row2;
+                    // stringstream ss_R_row3;
+                    // ss_id << det->id;
+                    // ss_t << "T:\t";
+                    // for (int i = 0; i < 3; i++)
+                    // {
+                    //     ss_t << pose.t->data[i] << "  ";
+                    // }
+                    // ss_R_row1 << "R:\t";
+                    // for (int i = 0; i < 3; i++)
+                    // {
+                    //     ss_R_row1 << pose.R->data[i] << "  ";
+                    // }
+                    // ss_R_row2 << "  \t";
+                    // for (int i = 3; i < 6; i++)
+                    // {
+                    //     ss_R_row2 << pose.R->data[i] << "  ";
+                    // }
+                    // ss_R_row3 << "  \t";
+                    // for (int i = 6; i < 9; i++)
+                    // {
+                    //     ss_R_row3 << pose.R->data[i] << "  ";
+                    // }
+
+                    // String text_id = ss_id.str();
+                    // String text_t = ss_t.str();
+                    // String text_R_row1 = ss_R_row1.str();
+                    // String text_R_row2 = ss_R_row2.str();
+                    // String text_R_row3 = ss_R_row3.str();
+
+                    // int fontface = FONT_HERSHEY_PLAIN;
+                    // double fontscale = 0.8;
+                    // int baseline;
+                    // int verticalspace = 5;
+                    // int verticalidx = 0;
+                    // Size textsize = getTextSize(text_id, fontface, fontscale, 2,
+                    //     &baseline);
+                    // putText(frame, text_id, Point(det->c[0] - textsize.width / 2,
+                    //     det->c[1] + textsize.height / 2),
+                    //     fontface, fontscale, Scalar(0xff, 0x99, 0), 1);
+                    // verticalidx++;
+                    // putText(frame, text_t, Point(det->c[0] - textsize.width / 2,
+                    //     det->c[1] + verticalidx * verticalspace * textsize.height / 2),
+                    //     fontface, fontscale, Scalar(0xff, 0x99, 0), 1);
+                    // verticalidx++;
+                    // putText(frame, text_R_row1, Point(det->c[0] - textsize.width / 2,
+                    //     det->c[1] + verticalidx * verticalspace * textsize.height / 2),
+                    //     fontface, fontscale, Scalar(0xff, 0x99, 0), 1);
+                    // verticalidx++;
+                    // putText(frame, text_R_row2, Point(det->c[0] - textsize.width / 2,
+                    //     det->c[1] + verticalidx * verticalspace * textsize.height / 2),
+                    //     fontface, fontscale, Scalar(0xff, 0x99, 0), 1);
+                    // verticalidx++;
+                    // putText(frame, text_R_row3, Point(det->c[0] - textsize.width / 2,
+                    //     det->c[1] + verticalidx * verticalspace * textsize.height / 2),
+                    //     fontface, fontscale, Scalar(0xff, 0x99, 0), 1);
+                }
+            }
+            apriltag_detections_destroy(detections);
             // 图片标注
             if (FeimaTagDebug.imshow){
-                line(frame, Point(det->p[0][0], det->p[0][1]),
-                    Point(det->p[1][0], det->p[1][1]),
-                    Scalar(0, 0xff, 0), 2);
-                line(frame, Point(det->p[0][0], det->p[0][1]),
-                    Point(det->p[3][0], det->p[3][1]),
-                    Scalar(0, 0, 0xff), 2);
-                line(frame, Point(det->p[1][0], det->p[1][1]),
-                    Point(det->p[2][0], det->p[2][1]),
-                    Scalar(0xff, 0, 0), 2);
-                line(frame, Point(det->p[2][0], det->p[2][1]),
-                    Point(det->p[3][0], det->p[3][1]),
-                    Scalar(0xff, 0, 0), 2);
+                int idxText = -1;
+                int textSpaceVertical = 25;
+                int textVertical0 = 20;
+                int textHorizon0 = 10;
+                Scalar textColor = Scalar(0, 255, 0);
+                double textFontScale = 0.6;
+                char imshow_time[40];
+                char imshow_valid_frame[40];
+                char imshow_framerate[40];
+                char tags_tcl[40];
+                char tagm_tcl[40];
+                char tagl_tcl[40];
+
+                idxText ++;
+                sprintf(imshow_time,"%d : %d  (frame: %d)",clock_minute,clock_sec,FeimaTagOutput.idxValid + FeimaTagOutput.idxInvalid);
+                putText(frame, imshow_time, Point(textHorizon0,textVertical0+idxText*textSpaceVertical),
+                        FONT_HERSHEY_SIMPLEX, textFontScale, textColor, 2);
+                idxText ++;
+                sprintf(imshow_valid_frame,"valid frame: %d / %d", FeimaTagOutput.idxValid, FeimaTagOutput.idxValid + FeimaTagOutput.idxInvalid);
+                putText(frame, imshow_valid_frame, Point(textHorizon0,textVertical0+idxText*textSpaceVertical),
+                        FONT_HERSHEY_SIMPLEX, textFontScale, textColor, 2);
+                idxText ++;
+                sprintf(imshow_framerate,"frame rate: %d", FeimaTagOutput.frameRate);
+                putText(frame, imshow_framerate, Point(textHorizon0,textVertical0+idxText*textSpaceVertical),
+                        FONT_HERSHEY_SIMPLEX, textFontScale, textColor, 2);
+                idxText ++;
+                idxText ++;
+                if (FeimaTagOutput.Tags.isDetect){
+                    sprintf(tags_tcl,"small tag : %3.2f %3.2f %3.2f live", FeimaTagOutput.Tags.tcl[0], FeimaTagOutput.Tags.tcl[1], FeimaTagOutput.Tags.tcl[2]);
+                }
+                else {
+                    sprintf(tags_tcl,"small tag : %3.2f %3.2f %3.2f dead", FeimaTagOutput.Tags.tcl[0], FeimaTagOutput.Tags.tcl[1], FeimaTagOutput.Tags.tcl[2]);
+                }
+                putText(frame, tags_tcl, Point(textHorizon0,textVertical0+idxText*textSpaceVertical),
+                        FONT_HERSHEY_SIMPLEX, textFontScale, textColor, 2);
+
+                idxText ++;
+                idxText ++;
+                if (FeimaTagOutput.Tagm.isDetect){
+                    sprintf(tagm_tcl,"middle tag: %3.2f %3.2f %3.2f live", FeimaTagOutput.Tagm.tcl[0], FeimaTagOutput.Tagm.tcl[1], FeimaTagOutput.Tagm.tcl[2]);
+                }
+                else {
+                    sprintf(tagm_tcl,"middle tag: %3.2f %3.2f %3.2f dead", FeimaTagOutput.Tagm.tcl[0], FeimaTagOutput.Tagm.tcl[1], FeimaTagOutput.Tagm.tcl[2]);
+                }
+                putText(frame, tagm_tcl, Point(textHorizon0,textVertical0+idxText*textSpaceVertical),
+                        FONT_HERSHEY_SIMPLEX, textFontScale, textColor, 2);      
+
+                idxText ++;
+                idxText ++;
+                if (FeimaTagOutput.Tagl.isDetect){
+                    sprintf(tagl_tcl,"large tag : %3.2f %3.2f %3.2f live", FeimaTagOutput.Tagl.tcl[0], FeimaTagOutput.Tagl.tcl[1], FeimaTagOutput.Tagl.tcl[2]);
+                }
+                else {
+                    sprintf(tagl_tcl,"large tag : %3.2f %3.2f %3.2f dead", FeimaTagOutput.Tagl.tcl[0], FeimaTagOutput.Tagl.tcl[1], FeimaTagOutput.Tagl.tcl[2]);
+                }
+                putText(frame, tagl_tcl, Point(textHorizon0,textVertical0+idxText*textSpaceVertical),
+                        FONT_HERSHEY_SIMPLEX, textFontScale, textColor, 2);                                      
+
+                imshow("image show",frame);
+                int wait_msec;
+                if (FeimaTagOutput.nDetect==0)
+                    wait_msec = 10;
+                else
+                    wait_msec = 10;
                     
-                // stringstream ss_id;
-                // stringstream ss_t;
-                // stringstream ss_R_row1;
-                // stringstream ss_R_row2;
-                // stringstream ss_R_row3;
-                // ss_id << det->id;
-                // ss_t << "T:\t";
-                // for (int i = 0; i < 3; i++)
-                // {
-                //     ss_t << pose.t->data[i] << "  ";
-                // }
-                // ss_R_row1 << "R:\t";
-                // for (int i = 0; i < 3; i++)
-                // {
-                //     ss_R_row1 << pose.R->data[i] << "  ";
-                // }
-                // ss_R_row2 << "  \t";
-                // for (int i = 3; i < 6; i++)
-                // {
-                //     ss_R_row2 << pose.R->data[i] << "  ";
-                // }
-                // ss_R_row3 << "  \t";
-                // for (int i = 6; i < 9; i++)
-                // {
-                //     ss_R_row3 << pose.R->data[i] << "  ";
-                // }
-
-                // String text_id = ss_id.str();
-                // String text_t = ss_t.str();
-                // String text_R_row1 = ss_R_row1.str();
-                // String text_R_row2 = ss_R_row2.str();
-                // String text_R_row3 = ss_R_row3.str();
-
-                // int fontface = FONT_HERSHEY_PLAIN;
-                // double fontscale = 0.8;
-                // int baseline;
-                // int verticalspace = 5;
-                // int verticalidx = 0;
-                // Size textsize = getTextSize(text_id, fontface, fontscale, 2,
-                //     &baseline);
-                // putText(frame, text_id, Point(det->c[0] - textsize.width / 2,
-                //     det->c[1] + textsize.height / 2),
-                //     fontface, fontscale, Scalar(0xff, 0x99, 0), 1);
-                // verticalidx++;
-                // putText(frame, text_t, Point(det->c[0] - textsize.width / 2,
-                //     det->c[1] + verticalidx * verticalspace * textsize.height / 2),
-                //     fontface, fontscale, Scalar(0xff, 0x99, 0), 1);
-                // verticalidx++;
-                // putText(frame, text_R_row1, Point(det->c[0] - textsize.width / 2,
-                //     det->c[1] + verticalidx * verticalspace * textsize.height / 2),
-                //     fontface, fontscale, Scalar(0xff, 0x99, 0), 1);
-                // verticalidx++;
-                // putText(frame, text_R_row2, Point(det->c[0] - textsize.width / 2,
-                //     det->c[1] + verticalidx * verticalspace * textsize.height / 2),
-                //     fontface, fontscale, Scalar(0xff, 0x99, 0), 1);
-                // verticalidx++;
-                // putText(frame, text_R_row3, Point(det->c[0] - textsize.width / 2,
-                //     det->c[1] + verticalidx * verticalspace * textsize.height / 2),
-                //     fontface, fontscale, Scalar(0xff, 0x99, 0), 1);
+                if (waitKey(wait_msec) >= 0)
+                    break;
             }
-        }
-        apriltag_detections_destroy(detections);
-        // 图片标注
-        if (FeimaTagDebug.imshow){
-            int idxText = -1;
-            int textSpaceVertical = 25;
-            int textVertical0 = 20;
-            int textHorizon0 = 10;
-            Scalar textColor = Scalar(0, 255, 0);
-            double textFontScale = 0.6;
-            char imshow_time[40];
-            char imshow_valid_frame[40];
-            char imshow_framerate[40];
-            char tags_tcl[40];
-            char tagm_tcl[40];
-            char tagl_tcl[40];
-
-            idxText ++;
-            sprintf(imshow_time,"%d : %d  (frame: %d)",clock_minute,clock_sec,FeimaTagOutput.idxValid + FeimaTagOutput.idxInvalid);
-            putText(frame, imshow_time, Point(textHorizon0,textVertical0+idxText*textSpaceVertical),
-                    FONT_HERSHEY_SIMPLEX, textFontScale, textColor, 2);
-            idxText ++;
-            sprintf(imshow_valid_frame,"valid frame: %d / %d", FeimaTagOutput.idxValid, FeimaTagOutput.idxValid + FeimaTagOutput.idxInvalid);
-            putText(frame, imshow_valid_frame, Point(textHorizon0,textVertical0+idxText*textSpaceVertical),
-                    FONT_HERSHEY_SIMPLEX, textFontScale, textColor, 2);
-            idxText ++;
-            sprintf(imshow_framerate,"frame rate: %d", FeimaTagOutput.frameRate);
-            putText(frame, imshow_framerate, Point(textHorizon0,textVertical0+idxText*textSpaceVertical),
-                    FONT_HERSHEY_SIMPLEX, textFontScale, textColor, 2);
-            idxText ++;
-            idxText ++;
-            if (FeimaTagOutput.Tags.isDetect){
-                sprintf(tags_tcl,"small tag : %3.1f %3.1f %3.1f live", FeimaTagOutput.Tags.tcl[0], FeimaTagOutput.Tags.tcl[1], FeimaTagOutput.Tags.tcl[2]);
-            }
-            else {
-                sprintf(tags_tcl,"small tag : %3.1f %3.1f %3.1f dead", FeimaTagOutput.Tags.tcl[0], FeimaTagOutput.Tags.tcl[1], FeimaTagOutput.Tags.tcl[2]);
-            }
-            putText(frame, tags_tcl, Point(textHorizon0,textVertical0+idxText*textSpaceVertical),
-                    FONT_HERSHEY_SIMPLEX, textFontScale, textColor, 2);
-
-            idxText ++;
-            idxText ++;
-            if (FeimaTagOutput.Tagm.isDetect){
-                sprintf(tagm_tcl,"middle tag: %-3.1f %-3.1f %-3.1f live", FeimaTagOutput.Tagm.tcl[0], FeimaTagOutput.Tagm.tcl[1], FeimaTagOutput.Tagm.tcl[2]);
-            }
-            else {
-                sprintf(tagm_tcl,"middle tag: %-3.1f %-3.1f %-3.1f dead", FeimaTagOutput.Tagm.tcl[0], FeimaTagOutput.Tagm.tcl[1], FeimaTagOutput.Tagm.tcl[2]);
-            }
-            putText(frame, tagm_tcl, Point(textHorizon0,textVertical0+idxText*textSpaceVertical),
-                    FONT_HERSHEY_SIMPLEX, textFontScale, textColor, 2);      
-
-            idxText ++;
-            idxText ++;
-            if (FeimaTagOutput.Tagl.isDetect){
-                sprintf(tagl_tcl,"large tag : %3.1f %3.1f %3.1f live", FeimaTagOutput.Tagl.tcl[0], FeimaTagOutput.Tagl.tcl[1], FeimaTagOutput.Tagl.tcl[2]);
-            }
-            else {
-                sprintf(tagl_tcl,"large tag : %3.1f %3.1f %3.1f dead", FeimaTagOutput.Tagl.tcl[0], FeimaTagOutput.Tagl.tcl[1], FeimaTagOutput.Tagl.tcl[2]);
-            }
-            putText(frame, tagl_tcl, Point(textHorizon0,textVertical0+idxText*textSpaceVertical),
-                    FONT_HERSHEY_SIMPLEX, textFontScale, textColor, 2);                                      
-
-            imshow("image show",frame);
-            int wait_msec;
-            if (FeimaTagOutput.nDetect==0)
-                wait_msec = 1000/30;
-            else
-                wait_msec = 1000/30;
-                
-            if (waitKey(wait_msec) >= 0)
-                break;
         }
     }
-
+    catch(const std::exception& e)
+    {
+        std::cerr << e.what() << '\n';
+        int pause = 1;
+    }
     apriltag_detector_destroy(td);
 
     tag36h11_destroy(tf_tag36h11);

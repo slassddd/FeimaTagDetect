@@ -1,0 +1,14 @@
+*.a
+*.so
+*.o
+*.swp
+*.png
+*.jpg
+*.avi
+*.ps
+*.pnm
+demo/
+example/opencv_demo
+example/apriltag_demo
+build/
+

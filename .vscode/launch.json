@@ -1,0 +1,29 @@
+{
+    // Use IntelliSense to learn about possible attributes.
+    // Hover to view descriptions of existing attributes.
+    // For more information, visit: https://go.microsoft.com/fwlink/?linkid=830387
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "name": "FeimaTag g++",
+            "type": "cppdbg",
+            "request": "launch",
+            "program": "/home/sl/Desktop/software/FeimaTag/build/opencv_demo",
+            "args": [],
+            "stopAtEntry": false,
+            "cwd": "/home/sl/Desktop/software/FeimaTag/",
+            "environment": [],
+            "externalConsole": false,
+            "MIMode": "gdb",
+            "setupCommands": [
+                {
+                    "description": "Enable pretty-printing for gdb",
+                    "text": "-enable-pretty-printing",
+                    "ignoreFailures": true
+                }
+            ],
+            "preLaunchTask": "FeimaTag Build",
+            "miDebuggerPath": "/usr/bin/gdb"
+        }
+    ]
+}

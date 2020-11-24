@@ -1,0 +1,43 @@
+{
+    "version": "2.0.0",
+    "options": {
+        "cwd": "/home/sl/Desktop/software/FeimaTag/build"
+    },
+    "tasks": [
+        {
+            "type": "cppbuild",
+            "label": "cmake",
+            "command": "cmake",
+            "args": [
+                ".."
+            ],
+            "options": {
+                "cwd": "/home/sl/Desktop/software/FeimaTag/build"
+            }
+        },
+        {
+            "label": "make",
+            "group": {
+                "kind": "build",
+                "isDefault": true
+            },
+            "command": [
+                "make"
+            ],
+            "args": [
+                "-j",
+                "8"
+            ],
+            "problemMatcher": []
+        },
+        {
+            "label": "FeimaTag Build",
+            "dependsOrder": "sequence",
+            "dependsOn": [
+                "cmake",
+                "make"
+            ]
+        }
+    ],
+    
+}

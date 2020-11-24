@@ -69,9 +69,8 @@ int main(int argc, char* argv[])
         .idTagl = 223
     };
     struct YFeimaTagStruct FeimaTagOutput;// tag检测模块的输出结构体
-    FeimaTagOutput.idxValid = 0;
-    FeimaTagOutput.idxInvalid = 0;
-    FeimaTagOutput.frameRate = 0;
+    initYFeimaTagStruct(&FeimaTagOutput);
+
     struct UFeimaTagStruct FeimaTagInput;
     
     static float duPerFrame = 0;
@@ -106,6 +105,7 @@ int main(int argc, char* argv[])
         // VideoCapture cap(videoName);
     }
     else{
+        // videoName = "/home/sl/Desktop/software/FeimaTag/demo/v_determine_axis.avi";
         videoName = "./demo/v_determine_axis.avi";
         //VideoCapture cap("/home/sl/Desktop/software/apriltag-master/demo/syn_tag36_11_00002.png");
         //VideoCapture cap("/home/sl/Desktop/software/apriltag-master/demo/syn_tagCustom48h12_tagCustom48h12_tagCustom48h12.png");
@@ -137,7 +137,7 @@ int main(int argc, char* argv[])
     apriltag_detector_t* td = apriltag_detector_create();
     // 添加需要进行识别的Tag family，可以添加多个
     apriltag_detector_add_family(td, tf_tag36h11);
-    apriltag_detector_add_family(td, tf_tagCustom48h12);
+    // apriltag_detector_add_family(td, tf_tagCustom48h12);
 
     td->quad_decimate = getopt_get_double(getopt, "decimate");
     td->quad_sigma = getopt_get_double(getopt, "blur");
@@ -255,6 +255,10 @@ int main(int argc, char* argv[])
         infoDetection.fy = feimaCameraConfig.fy;
         infoDetection.cx = feimaCameraConfig.cx;
         infoDetection.cy = feimaCameraConfig.cy;
+
+        FeimaTagOutput.Tags.isDetect = false;
+        FeimaTagOutput.Tagm.isDetect = false;
+        FeimaTagOutput.Tagl.isDetect = false;
         // Draw detection outlines
         for (int i = 0; i < FeimaTagOutput.nDetect; i++) {
             zarray_get(detections, i, &det);
@@ -482,9 +486,9 @@ int main(int argc, char* argv[])
             imshow("image show",frame);
             int wait_msec;
             if (FeimaTagOutput.nDetect==0)
-                wait_msec = 10;
+                wait_msec = 1000/30;
             else
-                wait_msec = 30;
+                wait_msec = 1000/30;
                 
             if (waitKey(wait_msec) >= 0)
                 break;

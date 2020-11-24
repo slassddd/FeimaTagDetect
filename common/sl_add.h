@@ -89,6 +89,8 @@ extern "C" {
     void disp_R_t(matd_t* R, matd_t* t, char spaceStrPerFrame3tab[]);
     void disp_euler(float roll, float pitch, float yaw, char spaceStrPerFrame3tab[]);
     void disp_apriltag_detection_t(apriltag_detection_t* det, int idx, char spaceStr[]);
+    void resetTagInfo(struct TagInfo* tagInfo);
+    void initYFeimaTagStruct(struct YFeimaTagStruct* FeimaTagOutput);
     // void assignTagInfo(apriltag_pose_t pose, struct TagInfo& tempTagInfo);
     // void updateU(); // update input
     // void updateY(); // update output

@@ -220,8 +220,8 @@ void quick_decode_init(apriltag_family_t *family, int maxhamming) //
 
     qd->nentries = capacity * 3;
 
-//    printf("capacity %d, size: %.0f kB\n",
-//           capacity, qd->nentries * sizeof(struct quick_decode_entry) / 1024.0);
+   printf("capacity %d, size: %.0f kB\n",
+          capacity, qd->nentries * sizeof(struct quick_decode_entry) / 1024.0);
 
     qd->entries = calloc(qd->nentries, sizeof(struct quick_decode_entry));
     if (qd->entries == NULL) {

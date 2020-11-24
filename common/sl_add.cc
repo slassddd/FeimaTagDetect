@@ -58,3 +58,41 @@ void cal_frame_rate()
     // idx ++;
     // utime_now(e)
 }
+
+//
+void resetTagInfo(struct TagInfo* tagInfo){
+    for (int i = 0; i != 3; i++){
+        tagInfo->tcl[i] = 0.0;
+        tagInfo->eulerdcl[i] = 0.0;  
+    }
+    for (int i = 0; i != 9; i++){
+        tagInfo->Rcl[i] = 0.0;  
+    }
+    tagInfo->isDetect = false;
+}
+
+// void resetTagInfo(struct TagInfo tagInfo){
+//     for (int i = 0; i != 3; i++){
+//         tagInfo.tcl[i] = 0.0;
+//         tagInfo.eulerdcl[i] = 0.0;  
+//     }
+//     for (int i = 0; i != 9; i++){
+//         tagInfo.Rcl[i] = 0.0;  
+//     }
+//     tagInfo.isDetect = false;
+// }
+
+//
+void initYFeimaTagStruct(struct YFeimaTagStruct* FeimaTagOutput){
+    resetTagInfo(&FeimaTagOutput->Tags);
+    resetTagInfo(&FeimaTagOutput->Tagm);
+    resetTagInfo(&FeimaTagOutput->Tagl);
+    FeimaTagOutput->nDetect = 0;
+    FeimaTagOutput->frameRate = 0;    
+    FeimaTagOutput->idxValid = 0;
+    FeimaTagOutput->idxInvalid = 0;
+    FeimaTagOutput->validFlag = false;
+    FeimaTagOutput->timePerFrame = 0.0;
+    FeimaTagOutput->isCameraOpen = false;    
+    
+}

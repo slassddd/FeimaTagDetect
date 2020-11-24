@@ -7,7 +7,7 @@
 *.avi
 *.ps
 *.pnm
-demo/
+demo/*.*
 example/opencv_demo
 example/apriltag_demo
 build/

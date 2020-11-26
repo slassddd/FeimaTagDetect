@@ -9,7 +9,10 @@
             "type": "cppdbg",
             "request": "launch",
             "program": "/home/sl/Desktop/software/FeimaTag/build/opencv_demo",
-            "args": [],
+            "args": [
+                "./configFiles/p640_480.yaml",
+                "./demo/v_determine_axis.avi"
+            ],
             "stopAtEntry": false,
             "cwd": "/home/sl/Desktop/software/FeimaTag/",
             "environment": [],

@@ -1,0 +1,16 @@
+%YAML:1.0
+
+Camera.fx: 650.0
+Camera.fy: 650.0
+Camera.cx: 320.0
+Camera.cy: 240.0
+
+# Tag.familyNameTags: "tag36h11"
+# Tag.familyNameTagm: "tagCustom48h12"
+# Tag.familyNameTagl: "tagCustom48h12"
+Tag.sizeTags: 0.01
+Tag.sizeTagm: 0.06
+Tag.sizeTagl: 0.3
+Tag.idTags: 225
+Tag.idTagm: 224
+Tag.idTagl: 223

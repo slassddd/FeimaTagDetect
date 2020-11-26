@@ -1,4 +1,4 @@
-#include "sl_add.h"
+#include "sl_add.hpp"
 
 // ���Ժ���
 int testadd(int a, int b) {

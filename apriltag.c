@@ -54,7 +54,7 @@ either expressed or implied, of the Regents of The University of Michigan.
 
 #include "common/postscript_utils.h"
 
-#include "common/sl_add.h"
+#include "common/sl_add.hpp"
 
 #ifndef M_PI
 # define M_PI 3.141592653589793238462643383279502884196

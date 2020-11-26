@@ -28,6 +28,7 @@ either expressed or implied, of the Regents of The University of Michigan.
 #include <iostream>
 
 #include "opencv2/opencv.hpp"
+// #include<opencv2/core/core.hpp>
 
 extern "C" {
 #include "apriltag.h"
@@ -42,32 +43,49 @@ extern "C" {
 #include "tagStandard52h13.h"
 #include "common/getopt.h"
 
-#include "common/sl_add.h"
+// #include "common/sl_add.h"
 }
-
+#include "common/sl_add.hpp"
 
 using namespace std;
 using namespace cv;
 
+bool ParseParamFile(string strSettingPath,struct CameraConfig* feimaCameraConfig,struct TagConfig* tagConfig);
+
 int main(int argc, char* argv[])
 {
-    struct CameraConfig feimaCameraConfig = {
-        .fx = 650,
-        .fy = 650,
-        .cx = 320,
-        .cy = 240,
-    };
-    struct TagConfig feimaTagConfig = {
-        .familyNameTags = "tag36h11",
-        .familyNameTagm = "tagCustom48h12",
-        .familyNameTagl = "tagCustom48h12",
-        .sizeTags = 0.01,
-        .sizeTagm = 0.06,
-        .sizeTagl = 0.3,
-        .idTags = 225,
-        .idTagm = 224,
-        .idTagl = 223
-    };
+    // Initialize camera
+    char* videoName;
+    string configFileName;
+    if (argc>=2){
+        cout << "argc:" << argc << endl;
+        for (int i = 0; i != argc; i++)
+            cout << "argv[" << i << "]: " << argv[i] << endl;
+
+        configFileName = string(argv[1]);
+        videoName = argv[2];        
+    }
+    else{
+        videoName = "./demo/v_determine_axis.avi";
+        configFileName = "./configFiles/p640_480.yaml";
+        //VideoCapture cap("/home/sl/Desktop/software/apriltag-master/demo/syn_tag36_11_00002.png");
+        //VideoCapture cap("/home/sl/Desktop/software/apriltag-master/demo/syn_tagCustom48h12_tagCustom48h12_tagCustom48h12.png");
+        // VideoCapture cap("/home/sl/Desktop/software/FeimaDataSet/data_tag/v_determine_axis.avi");  // v_determine_axis
+        // VideoCapture cap(videoName); // v1_win10_1080p.avi  v1_win10_480p v2_win10_480p v1 v1_1123 v_determine_axis
+    }
+
+    struct TagConfig feimaTagConfig;
+    struct CameraConfig feimaCameraConfig;
+    bool isSuccess = ParseParamFile(configFileName,&feimaCameraConfig,&feimaTagConfig);
+    if (!isSuccess){
+        cout << "Fail to parse parameters." << endl;
+        return -1;
+    }
+
+    feimaTagConfig.familyNameTags = "tag36h11";
+    feimaTagConfig.familyNameTagm = "tagCustom48h12";
+    feimaTagConfig.familyNameTagl = "tagCustom48h12";
+
     struct YFeimaTagStruct FeimaTagOutput;// tag检测模块的输出结构体
     initYFeimaTagStruct(&FeimaTagOutput);
 
@@ -95,23 +113,6 @@ int main(int argc, char* argv[])
     //     exit(0);
     // }
 
-    // Initialize camera
-    char* videoName;
-    if (argc>=2){
-        cout << "argc:" << argc << endl;
-        for (int i = 0; i != argc; i++)
-            cout << "argv[" << i << "]: " << argv[i] << endl;
-        videoName = argv[1];
-        // VideoCapture cap(videoName);
-    }
-    else{
-        // videoName = "/home/sl/Desktop/software/FeimaTag/demo/v_determine_axis.avi";
-        videoName = "./demo/v_determine_axis.avi";
-        //VideoCapture cap("/home/sl/Desktop/software/apriltag-master/demo/syn_tag36_11_00002.png");
-        //VideoCapture cap("/home/sl/Desktop/software/apriltag-master/demo/syn_tagCustom48h12_tagCustom48h12_tagCustom48h12.png");
-        // VideoCapture cap("/home/sl/Desktop/software/FeimaDataSet/data_tag/v_determine_axis.avi");  // v_determine_axis
-        // VideoCapture cap(videoName); // v1_win10_1080p.avi  v1_win10_480p v2_win10_480p v1 v1_1123 v_determine_axis
-    }
     VideoCapture cap(videoName);
     cout << "video name: " << videoName << endl;
 
@@ -394,66 +395,6 @@ int main(int argc, char* argv[])
                     line(frame, Point(det->p[2][0], det->p[2][1]),
                         Point(det->p[3][0], det->p[3][1]),
                         Scalar(0xff, 0, 0), 2);
-                        
-                    // stringstream ss_id;
-                    // stringstream ss_t;
-                    // stringstream ss_R_row1;
-                    // stringstream ss_R_row2;
-                    // stringstream ss_R_row3;
-                    // ss_id << det->id;
-                    // ss_t << "T:\t";
-                    // for (int i = 0; i < 3; i++)
-                    // {
-                    //     ss_t << pose.t->data[i] << "  ";
-                    // }
-                    // ss_R_row1 << "R:\t";
-                    // for (int i = 0; i < 3; i++)
-                    // {
-                    //     ss_R_row1 << pose.R->data[i] << "  ";
-                    // }
-                    // ss_R_row2 << "  \t";
-                    // for (int i = 3; i < 6; i++)
-                    // {
-                    //     ss_R_row2 << pose.R->data[i] << "  ";
-                    // }
-                    // ss_R_row3 << "  \t";
-                    // for (int i = 6; i < 9; i++)
-                    // {
-                    //     ss_R_row3 << pose.R->data[i] << "  ";
-                    // }
-
-                    // String text_id = ss_id.str();
-                    // String text_t = ss_t.str();
-                    // String text_R_row1 = ss_R_row1.str();
-                    // String text_R_row2 = ss_R_row2.str();
-                    // String text_R_row3 = ss_R_row3.str();
-
-                    // int fontface = FONT_HERSHEY_PLAIN;
-                    // double fontscale = 0.8;
-                    // int baseline;
-                    // int verticalspace = 5;
-                    // int verticalidx = 0;
-                    // Size textsize = getTextSize(text_id, fontface, fontscale, 2,
-                    //     &baseline);
-                    // putText(frame, text_id, Point(det->c[0] - textsize.width / 2,
-                    //     det->c[1] + textsize.height / 2),
-                    //     fontface, fontscale, Scalar(0xff, 0x99, 0), 1);
-                    // verticalidx++;
-                    // putText(frame, text_t, Point(det->c[0] - textsize.width / 2,
-                    //     det->c[1] + verticalidx * verticalspace * textsize.height / 2),
-                    //     fontface, fontscale, Scalar(0xff, 0x99, 0), 1);
-                    // verticalidx++;
-                    // putText(frame, text_R_row1, Point(det->c[0] - textsize.width / 2,
-                    //     det->c[1] + verticalidx * verticalspace * textsize.height / 2),
-                    //     fontface, fontscale, Scalar(0xff, 0x99, 0), 1);
-                    // verticalidx++;
-                    // putText(frame, text_R_row2, Point(det->c[0] - textsize.width / 2,
-                    //     det->c[1] + verticalidx * verticalspace * textsize.height / 2),
-                    //     fontface, fontscale, Scalar(0xff, 0x99, 0), 1);
-                    // verticalidx++;
-                    // putText(frame, text_R_row3, Point(det->c[0] - textsize.width / 2,
-                    //     det->c[1] + verticalidx * verticalspace * textsize.height / 2),
-                    //     fontface, fontscale, Scalar(0xff, 0x99, 0), 1);
                 }
             }
             apriltag_detections_destroy(detections);
@@ -542,4 +483,136 @@ int main(int argc, char* argv[])
     getopt_destroy(getopt);
 
     return 0;
+}
+
+
+bool ParseParamFile(string strSettingPath,struct CameraConfig* cameraConfig,struct TagConfig* tagConfig){
+    bool isParamMiss = false;
+    cv::FileStorage fSettings(strSettingPath, cv::FileStorage::READ);
+
+    cv::FileNode node = fSettings["Camera.fx"];
+    if(!node.empty() && node.isReal())
+    {
+        cameraConfig->fx = node.real();
+    }
+    else
+    {
+        std::cerr << "fx doesn't exist or is not an real number" << std::endl;
+        isParamMiss = true;
+    }    
+
+    node = fSettings["Camera.fy"];
+    if(!node.empty() && node.isReal())
+    {
+        cameraConfig->fy = node.real();
+    }
+    else
+    {
+        std::cerr << "fy doesn't exist or is not an real number" << std::endl;
+        isParamMiss = true;
+    }
+
+    node = fSettings["Camera.cx"];
+    if(!node.empty() && node.isReal())
+    {
+        cameraConfig->cx = node.real();
+    }
+    else
+    {
+        std::cerr << "cx doesn't exist or is not an real number" << std::endl;
+        isParamMiss = true;
+    }    
+
+    node = fSettings["Camera.cy"];
+    if(!node.empty() && node.isReal())
+    {
+        cameraConfig->cy = node.real();
+    }
+    else
+    {
+        std::cerr << "cy doesn't exist or is not an real number" << std::endl;
+        isParamMiss = true;
+    }         
+
+    //
+    
+    // string familyNameTags = fSettings["Tag.familyNameTags"];
+    // tagConfig->familyNameTags = (char*)familyNameTags.c_str();
+    // string familyNameTagm = fSettings["Tag.familyNameTagm"];
+    // tagConfig->familyNameTagm = (char*)familyNameTagm.c_str();
+    // string familyNameTagl = fSettings["Tag.familyNameTagl"];
+    // tagConfig->familyNameTagl = (char*)familyNameTagl.c_str();
+
+    node = fSettings["Tag.sizeTags"];
+    if(!node.empty() && node.isReal())
+    {
+        tagConfig->sizeTags = node.real();
+    }
+    else
+    {
+        std::cerr << "sizeTags doesn't exist or is not an real number" << std::endl;
+        isParamMiss = true;
+    } 
+
+    node = fSettings["Tag.sizeTagm"];
+    if(!node.empty() && node.isReal())
+    {
+        tagConfig->sizeTagm = node.real();
+    }
+    else
+    {
+        std::cerr << "sizeTagm doesn't exist or is not an real number" << std::endl;
+        isParamMiss = true;
+    } 
+
+    node = fSettings["Tag.sizeTagl"];
+    if(!node.empty() && node.isReal())
+    {
+        tagConfig->sizeTagl = node.real();
+    }
+    else
+    {
+        std::cerr << "sizeTagl doesn't exist or is not an real number" << std::endl;
+        isParamMiss = true;
+    }     
+
+    node = fSettings["Tag.idTags"];
+    if(!node.empty() && node.isInt())
+    {
+        tagConfig->idTags = node.operator int();
+    }
+    else
+    {
+        std::cerr << "idTags doesn't exist or is not an integer number" << std::endl;
+        isParamMiss = true;
+    } 
+
+    node = fSettings["Tag.idTagm"];
+    if(!node.empty() && node.isInt())
+    {
+        tagConfig->idTagm = node.operator int();
+    }
+    else
+    {
+        std::cerr << "idTagm doesn't exist or is not an integer number" << std::endl;
+        isParamMiss = true;
+    } 
+
+    node = fSettings["Tag.idTagl"];
+    if(!node.empty() && node.isInt())
+    {
+        tagConfig->idTagl = node.operator int();
+    }
+    else
+    {
+        std::cerr << "idTagl doesn't exist or is not an integer number" << std::endl;
+        isParamMiss = true;
+    }      
+
+    if(isParamMiss)
+    {
+        return false;
+    }
+
+    return true; 
 }

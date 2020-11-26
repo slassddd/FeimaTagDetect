@@ -1,9 +1,10 @@
 #pragma once
+
 #include <stdlib.h>
 #include "matd.h"
 #include <math.h>
 #include <stdio.h>
-
+// extern "C" {
 #include "apriltag.h"
 // #include "apriltag_pose.h"
 // #include "tag36h11.h"
@@ -15,14 +16,10 @@
 // #include "tagStandard41h12.h"
 // #include "tagStandard52h13.h"
 // #include "common/getopt.h"
-
-// #include "common/sl_add.h"
+// }
 
 // #include "apriltag.h"
 //#include<iostream>
-//#ifndef __cplusplus
-//    #include<iostream>
-//#endif
 
 #ifndef M_PI
 # define M_PI 3.141592653589793238462643383279502884196
@@ -61,6 +58,9 @@ struct YFeimaTagStruct {
 };
 
 struct TagConfig{
+    // std::string familyNameTags;
+    // std::string familyNameTagm;
+    // std::string familyNameTagl;     
     char* familyNameTags;
     char* familyNameTagm;
     char* familyNameTagl; 
@@ -80,6 +80,7 @@ struct CameraConfig{
 };
 
 // char charTagCustom48h12[] = "tagCustom48h12";
+
 #ifdef __cplusplus
 extern "C" {
 #endif

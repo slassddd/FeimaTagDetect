@@ -536,12 +536,29 @@ bool ParseParamFile(string strSettingPath,struct CameraConfig* cameraConfig,stru
 
     //
     
-    // string familyNameTags = fSettings["Tag.familyNameTags"];
-    // tagConfig->familyNameTags = (char*)familyNameTags.c_str();
-    // string familyNameTagm = fSettings["Tag.familyNameTagm"];
-    // tagConfig->familyNameTagm = (char*)familyNameTagm.c_str();
-    // string familyNameTagl = fSettings["Tag.familyNameTagl"];
-    // tagConfig->familyNameTagl = (char*)familyNameTagl.c_str();
+    string familyNameTags = fSettings["Tag.familyNameTags"];
+    tagConfig->familyNameTags = new char[familyNameTags.size()+1];
+    strcpy(tagConfig->familyNameTags,familyNameTags.c_str());
+    if(familyNameTags.size()==0){
+        std::cerr << "familyNameTags doesn't exist or is not an string" << std::endl;
+        isParamMiss = true;
+    }
+
+    string familyNameTagm = fSettings["Tag.familyNameTagm"];
+    tagConfig->familyNameTagm = new char[familyNameTagm.size()+1];
+    strcpy(tagConfig->familyNameTagm,familyNameTagm.c_str());
+    if(familyNameTagm.size()==0){
+        std::cerr << "familyNameTagm doesn't exist or is not an string" << std::endl;
+        isParamMiss = true;
+    }
+
+    string familyNameTagl = fSettings["Tag.familyNameTagl"];
+    tagConfig->familyNameTagl = new char[familyNameTagl.size()+1];
+    strcpy(tagConfig->familyNameTagl,familyNameTagl.c_str());
+    if(familyNameTagl.size()==0){
+        std::cerr << "familyNameTagl doesn't exist or is not an string" << std::endl;
+        isParamMiss = true;
+    }
 
     node = fSettings["Tag.sizeTags"];
     if(!node.empty() && node.isReal())

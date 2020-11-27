@@ -51,7 +51,7 @@ using namespace cv;
 
 int main(int argc, char* argv[])
 {
-    // Initialize camera
+    // Parse main argvs
     char* videoName;
     string configFileName;
     if (argc>=2){
@@ -63,12 +63,8 @@ int main(int argc, char* argv[])
         videoName = argv[2];        
     }
     else{
-        videoName = "./demo/v_determine_axis.avi";
+        videoName = "./demo/v_determine_axis.avi"; // syn_tag36_11_00002.png  syn_tagCustom48h12_tagCustom48h12_tagCustom48h12.png v1_win10_1080p.avi  v1_win10_480p v2_win10_480p v1 v1_1123 v_determine_axis
         configFileName = "./configFiles/p640_480.yaml";
-        //VideoCapture cap("/home/sl/Desktop/software/apriltag-master/demo/syn_tag36_11_00002.png");
-        //VideoCapture cap("/home/sl/Desktop/software/apriltag-master/demo/syn_tagCustom48h12_tagCustom48h12_tagCustom48h12.png");
-        // VideoCapture cap("/home/sl/Desktop/software/FeimaDataSet/data_tag/v_determine_axis.avi");  // v_determine_axis
-        // VideoCapture cap(videoName); // v1_win10_1080p.avi  v1_win10_480p v2_win10_480p v1 v1_1123 v_determine_axis
     }
 
     // Load configurations
@@ -85,8 +81,8 @@ int main(int argc, char* argv[])
 
     struct UFeimaTagStruct FeimaTagInput;
     
-    static float duPerFrame = 0;
-    static int rtFrameRate = 0;
+    float duPerFrame = 0;
+    int rtFrameRate = 0;
 
     getopt_t* getopt = getopt_create();
 

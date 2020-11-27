@@ -9,6 +9,7 @@ void resetTagInfo(TagInfo* tagInfo){
     for (int i = 0; i != 9; i++){
         tagInfo->Rcl[i] = 0.0;  
     }
+    tagInfo->err = 0.0;
     tagInfo->isDetect = false;
 }
 // 
@@ -77,24 +78,27 @@ bool ParseParamFile(string strSettingPath,CameraConfig* cameraConfig,TagConfig* 
     //
     
     string familyNameTags = fSettings["Tag.familyNameTags"];
-    tagConfig->familyNameTags = new char[familyNameTags.size()+1];
-    strcpy(tagConfig->familyNameTags,familyNameTags.c_str());
+    tagConfig->familyNameTags = familyNameTags;
+    // tagConfig->familyNameTags = new char[familyNameTags.size()+1];
+    // strcpy(tagConfig->familyNameTags,familyNameTags.c_str());
     if(familyNameTags.size()==0){
         std::cerr << "familyNameTags doesn't exist or is not an string" << std::endl;
         isParamMiss = true;
     }
 
     string familyNameTagm = fSettings["Tag.familyNameTagm"];
-    tagConfig->familyNameTagm = new char[familyNameTagm.size()+1];
-    strcpy(tagConfig->familyNameTagm,familyNameTagm.c_str());
+    tagConfig->familyNameTagm = familyNameTagm;
+    // tagConfig->familyNameTagm = new char[familyNameTagm.size()+1];
+    // strcpy(tagConfig->familyNameTagm,familyNameTagm.c_str());
     if(familyNameTagm.size()==0){
         std::cerr << "familyNameTagm doesn't exist or is not an string" << std::endl;
         isParamMiss = true;
     }
 
     string familyNameTagl = fSettings["Tag.familyNameTagl"];
-    tagConfig->familyNameTagl = new char[familyNameTagl.size()+1];
-    strcpy(tagConfig->familyNameTagl,familyNameTagl.c_str());
+    tagConfig->familyNameTagl = familyNameTagl;
+    // tagConfig->familyNameTagl = new char[familyNameTagl.size()+1];
+    // strcpy(tagConfig->familyNameTagl,familyNameTagl.c_str());
     if(familyNameTagl.size()==0){
         std::cerr << "familyNameTagl doesn't exist or is not an string" << std::endl;
         isParamMiss = true;
@@ -270,14 +274,13 @@ void CreateImagePlot(apriltag_detection_t* det, DebugFlagFeimaTagStruct FeimaTag
 //
 bool CalTagPOSE(apriltag_detection_t* det, TagConfig feimaTagConfig, apriltag_detection_info_t infoDetection, YFeimaTagStruct* FeimaTagOutput, TagInfo* tempTagInfo, apriltag_pose_t* pose){
     bool isContinue = false;
-    double err = 0.0;
     float yawd,pitchd,rolld;
 
-    if (det->id == feimaTagConfig.idTags && !strcmp(det->family->name,feimaTagConfig.familyNameTags))
+    if (det->id == feimaTagConfig.idTags && !strcmp(det->family->name,feimaTagConfig.familyNameTags.c_str()))
     {
         FeimaTagOutput->Tags.isDetect = true;
         infoDetection.tagsize = feimaTagConfig.sizeTags; // 米
-        err = estimate_tag_pose(&infoDetection, pose);
+        FeimaTagOutput->Tags.err = estimate_tag_pose(&infoDetection, pose);
         
         for (int i = 0; i != 9; i++) {
             FeimaTagOutput->Tags.Rcl[i] = pose->R->data[i];
@@ -292,11 +295,11 @@ bool CalTagPOSE(apriltag_detection_t* det, TagConfig feimaTagConfig, apriltag_de
         *tempTagInfo = FeimaTagOutput->Tags;
     }
     // calculate middle tag pose
-    if (det->id == feimaTagConfig.idTagm && !strcmp(det->family->name,feimaTagConfig.familyNameTagm))
+    if (det->id == feimaTagConfig.idTagm && !strcmp(det->family->name,feimaTagConfig.familyNameTagm.c_str()))
     {
         FeimaTagOutput->Tagm.isDetect = true;
         infoDetection.tagsize = feimaTagConfig.sizeTagm; // 米
-        err = estimate_tag_pose(&infoDetection, pose);
+        FeimaTagOutput->Tagm.err = estimate_tag_pose(&infoDetection, pose);
 
         for (int i = 0; i != 9; i++) {
             FeimaTagOutput->Tagm.Rcl[i] = pose->R->data[i];
@@ -311,11 +314,11 @@ bool CalTagPOSE(apriltag_detection_t* det, TagConfig feimaTagConfig, apriltag_de
         *tempTagInfo = FeimaTagOutput->Tagm;      
     }
     // calculate large tag pose
-    if (det->id == feimaTagConfig.idTagl && !strcmp(det->family->name,feimaTagConfig.familyNameTagl))
+    if (det->id == feimaTagConfig.idTagl && !strcmp(det->family->name,feimaTagConfig.familyNameTagl.c_str()))
     {
         FeimaTagOutput->Tagl.isDetect = true;
         infoDetection.tagsize = feimaTagConfig.sizeTagl; // 米
-        err = estimate_tag_pose(&infoDetection, pose);
+        FeimaTagOutput->Tagl.err = estimate_tag_pose(&infoDetection, pose);
 
         for (int i = 0; i != 9; i++) {
             FeimaTagOutput->Tagl.Rcl[i] = pose->R->data[i];

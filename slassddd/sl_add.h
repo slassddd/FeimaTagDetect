@@ -23,6 +23,7 @@ typedef struct TagInfo{
     float Rcl[9]; // DCM = [dcm0 dcm1 dcm2;dcm3 dcm4 dcm5;dcm6 dcm7 dcm8],  V_camera = DCM*V_world
     float eulerdcl[3]; // tag coordinate to camera coordinate,(yawd,pitchd,rolld), rotate sequence ZYX
     float tcl[3]; // center of Tag(LandMark) w.r.t. center of camera, in camera coordinate
+    float err;
     bool isDetect; // 
 }TagInfo;
 // Data received from flight controller
@@ -48,9 +49,9 @@ typedef struct TagConfig{
     // std::string familyNameTags;
     // std::string familyNameTagm;
     // std::string familyNameTagl;     
-    char* familyNameTags;
-    char* familyNameTagm;
-    char* familyNameTagl; 
+    std::string familyNameTags;
+    std::string familyNameTagm;
+    std::string familyNameTagl; 
     float sizeTags;
     float sizeTagm;
     float sizeTagl;

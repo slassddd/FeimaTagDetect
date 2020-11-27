@@ -29,22 +29,21 @@ either expressed or implied, of the Regents of The University of Michigan.
 #include "opencv2/opencv.hpp"
 
 extern "C" {
-#include "apriltag.h"
-#include "apriltag_pose.h"
-#include "tag36h11.h"
-#include "tag25h9.h"
-#include "tag16h5.h"
-#include "tagCircle21h7.h"
-#include "tagCircle49h12.h"
-#include "tagCustom48h12.h"
-#include "tagStandard41h12.h"
-#include "tagStandard52h13.h"
-#include "common/getopt.h"
+    #include "apriltag.h"
+    #include "apriltag_pose.h"
+    #include "tag36h11.h"
+    #include "tag25h9.h"
+    #include "tag16h5.h"
+    #include "tagCircle21h7.h"
+    #include "tagCircle49h12.h"
+    #include "tagCustom48h12.h"
+    #include "tagStandard41h12.h"
+    #include "tagStandard52h13.h"
+    #include "common/getopt.h"
 
-// #include "common/sl_add.h"
+    #include "slassddd/sl_disp.h"
 }
 #include "slassddd/sl_add.h"
-#include "slassddd/sl_disp.h"
 
 using namespace std;
 using namespace cv;
@@ -54,17 +53,26 @@ int main(int argc, char* argv[])
     // Parse main argvs
     char* videoName;
     string configFileName;
+    int min0 = 0, sec0 = 0;
+    
     if (argc>=2){
         cout << "argc:" << argc << endl;
         for (int i = 0; i != argc; i++)
             cout << "argv[" << i << "]: " << argv[i] << endl;
 
         configFileName = string(argv[1]);
-        videoName = argv[2];        
+        videoName = argv[2];   
+        if (argc==5){
+            min0 = atoi(argv[3]);
+            sec0 = atoi(argv[4]);                 
+        }
     }
     else{
-        videoName = "./demo/v_determine_axis.avi"; // syn_tag36_11_00002.png  syn_tagCustom48h12_tagCustom48h12_tagCustom48h12.png v1_win10_1080p.avi  v1_win10_480p v2_win10_480p v1 v1_1123 v_determine_axis
+        // syn_tag36_11_00002.png  syn_tagCustom48h12_tagCustom48h12_tagCustom48h12.png v1 v1_1123 v_determine_axis v1000_april
+        videoName = "./demo/v1000_april.avi";
         configFileName = "./configFiles/p640_480.yaml";
+        min0 = 0;
+        sec0 = 0;
     }
 
     // Load configurations
@@ -72,10 +80,15 @@ int main(int argc, char* argv[])
     struct CameraConfig feimaCameraConfig;
     bool isSuccess = ParseParamFile(configFileName,&feimaCameraConfig,&feimaTagConfig);
     if (!isSuccess){
-        cout << "Fail to parse parameters." << endl;
+        cout << "Fail to parse camera and tag parameters." << endl;
         return -1;
     }
-
+    apriltag_detector_t* td = apriltag_detector_create();
+    isSuccess = ParseAlgoParamFile(configFileName, td);
+    if (!isSuccess){
+        cout << "Fail to parse algorithm parameters." << endl;
+        return -1;
+    }
     struct YFeimaTagStruct FeimaTagOutput;// tag检测模块的输出结构体
     initYFeimaTagStruct(&FeimaTagOutput);
 
@@ -84,27 +97,22 @@ int main(int argc, char* argv[])
     float duPerFrame = 0;
     int rtFrameRate = 0;
 
-    getopt_t* getopt = getopt_create();
-
-    getopt_add_bool(getopt, 'h', "help", 0, "Show this help");
-    getopt_add_bool(getopt, 'd', "debug", 0, "Enable debugging output (slow)");
-    getopt_add_bool(getopt, 'q', "quiet", 0, "Reduce output");
-    //     getopt_add_string(getopt, 'f', "family", "tag36h11", "Tag family to use");
-    getopt_add_string(getopt, 'f', "family", "tagCustom48h12", "Tag family to use");
-    getopt_add_int(getopt, 't', "threads", "3", "Use this many CPU threads");
-    getopt_add_double(getopt, 'x', "decimate", "2.0", "Decimate input image by this factor");
-    getopt_add_double(getopt, 'b', "blur", "0.0", "Apply low-pass blur to input");
-    getopt_add_bool(getopt, '0', "refine-edges", 1, "Spend more time trying to align edges of tags");
-
-    // if (!getopt_parse(getopt, argc, argv, 1) ||
-    //     getopt_get_bool(getopt, "help")) {
-    //     printf("Usage: %s [options]\n", argv[0]);
-    //     getopt_do_usage(getopt);
-    //     exit(0);
-    // }
-
+    int framerate;
+    int framecount;
     VideoCapture cap(videoName);
-    cout << "video name: " << videoName << endl;
+    try
+    {
+        framerate = cap.get(CAP_PROP_FPS);
+        framecount = cap.get(CV_CAP_PROP_FRAME_COUNT);
+    }
+    catch(const std::exception& e)
+    {
+        framerate = 30;
+        framecount = 0;
+        std::cerr << e.what() << '\n';
+    }
+    
+    cout << "video name: " << videoName << "\t\t" << "fps (" << framerate << ")   " << "frame (" << framecount << ")" << endl;
 
     if (!cap.isOpened()){
         FeimaTagOutput.isCameraOpen = false;
@@ -114,41 +122,24 @@ int main(int argc, char* argv[])
         FeimaTagOutput.isCameraOpen = true;
         cout << "success to open!" << endl;
     }
-    //获取整个帧数
-// 	long totalFrameNumber = cap.get(CV_CAP_PROP_FRAME_COUNT);
-// 	cout<<"整个视频共"<<totalFrameNumber<<"帧"<<endl;
     // Initialize tag detector with options
     apriltag_family_t* tf_tagCustom48h12 = NULL;
     apriltag_family_t* tf_tag36h11 = NULL;
-    const char* famname = getopt_get_string(getopt, "family");
 
     tf_tagCustom48h12 = tagCustom48h12_create();
-    tf_tag36h11 = tag36h11_create();
-
-    apriltag_detector_t* td = apriltag_detector_create();
+    tf_tag36h11 = tag36h11_create();    
     // 添加需要进行识别的Tag family，可以添加多个
     apriltag_detector_add_family(td, tf_tag36h11);
     apriltag_detector_add_family(td, tf_tagCustom48h12);
 
-    td->quad_decimate = getopt_get_double(getopt, "decimate");
-    td->quad_sigma = getopt_get_double(getopt, "blur");
-    td->nthreads = getopt_get_int(getopt, "threads");
-    td->debug = getopt_get_bool(getopt, "debug");
-    td->refine_edges = getopt_get_bool(getopt, "refine-edges");
-    // td->debug = 1;
-
     Mat frame, gray;
     int frameidx = 0;
 
-    int framestamps = 0;
-    int framerate = 30;
+    int framestamps = 0;    
     int time_sec = 0;
     int clock_minute = 0;
     int clock_sec = 0;
 
-    int min0, sec0;
-    min0 = 0, sec0 = 0;
-    // min0 = 9, sec0 = 30;
     int time_sec_start = min0*60 + sec0;
 
     float yawd,pitchd,rolld;
@@ -184,7 +175,6 @@ int main(int argc, char* argv[])
             }
             catch(const std::exception& e)
             {
-                int sl = 1;
                 std::cerr << e.what() << '\n';
             }
             
@@ -214,16 +204,7 @@ int main(int argc, char* argv[])
             // 调试END    
             // ||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||
             // ||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||
-            // ||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||
-            // ||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||
-            // ||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||
-            // ||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||      
-            // ||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||
-            // ||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||
-            // ||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||
-            // ||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||
-            // ||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||
-            // ||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||                   
+            // ||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||            
             // *****************************************************  核心函数  *******************************************************
             std::chrono::steady_clock::time_point t1 = std::chrono::steady_clock::now();
 
@@ -234,20 +215,10 @@ int main(int argc, char* argv[])
             // ||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||
             // ||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||
             // ||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||
-            // ||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||
-            // ||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||
-            // ||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||      
-            // ||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||
-            // ||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||
-            // ||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||
-            // ||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||
-            // ||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||
-            // |||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||| 
+
             FeimaTagOutput.timePerFrame = std::chrono::duration_cast<std::chrono::duration<double> >(t2 - t1).count();
             if(duPerFrame>1)
             {
-                // cout << "image :" << vstrImageFilenames[seq][ni] << "\t\t";
-                // cout << "frame rate: " << frameRate << "\t\t(" << duPerFrame << "sec )" << endl;
                 duPerFrame = 0.0;
                 FeimaTagOutput.frameRate = rtFrameRate;
                 rtFrameRate = 0;
@@ -274,8 +245,6 @@ int main(int argc, char* argv[])
                 cout << "\t 帧 " << frameidx << "\t( 帧率 " << FeimaTagOutput.frameRate << " )" <<  endl;
                 cout << spaceStrPerFrame2tab << "检测到tag个数: " << FeimaTagOutput.nDetect << endl;
             }
-            if (frameidx == 3180)
-                int pause = 1;
             // 调试END         
 
             // First create an apriltag_detection_info_t struct using your known parameters.
@@ -300,19 +269,16 @@ int main(int argc, char* argv[])
                 CalTagPOSE(det, feimaTagConfig, infoDetection, &FeimaTagOutput, &tempTagInfo, &pose);
 
                 if ((!FeimaTagOutput.Tags.isDetect) && (!FeimaTagOutput.Tagm.isDetect) && (!FeimaTagOutput.Tagl.isDetect)){
-                    cout << "unexpected tag is detected!" << endl;
+                    cout << "unexpected tag is detected: " << det->family->name << " (" << det->id << ")" << endl;
                     continue;
                 }
 
-                // 调试START
                 if (FeimaTagDebug.basic_show) {
                     cout << spaceStrPerFrame2tab << "提取Tag检测结果 " << i + 1 << "/" << FeimaTagOutput.nDetect << ":\t" << det->family->name << "\t" << det->id << endl;
                     // disp_H(det->H, spaceStrPerFrame3tab);
                     disp_R_t(pose.R, pose.t, spaceStrPerFrame3tab);
                     disp_euler(tempTagInfo.eulerdcl[2], tempTagInfo.eulerdcl[1], tempTagInfo.eulerdcl[0], spaceStrPerFrame3tab);
                 }
-                // 调试END    
-
                 // 图片标注
                 CreateImagePlot(det, FeimaTagDebug, frame);      
             }
@@ -341,8 +307,6 @@ int main(int argc, char* argv[])
 
     tag36h11_destroy(tf_tag36h11);
     tagCustom48h12_destroy(tf_tagCustom48h12);
-
-    getopt_destroy(getopt);
 
     return 0;
 }

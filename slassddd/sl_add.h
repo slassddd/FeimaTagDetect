@@ -69,8 +69,9 @@ typedef struct CameraConfig{
 
 void resetTagInfo(TagInfo* tagInfo);
 void initYFeimaTagStruct(YFeimaTagStruct* FeimaTagOutput);
-bool ParseParamFile(string strSettingPath,CameraConfig* feimaCameraConfig,TagConfig* tagConfig);
 void CreateImageLegend(int clock_minute,int clock_sec,YFeimaTagStruct FeimaTagOutput, DebugFlagFeimaTagStruct FeimaTagDebug, cv::Mat frame);
 void ShowTagImage(YFeimaTagStruct FeimaTagOutput, DebugFlagFeimaTagStruct FeimaTagDebug, cv::Mat frame);
 void CreateImagePlot(apriltag_detection_t* det, DebugFlagFeimaTagStruct FeimaTagDebug,cv::Mat frame);
 bool CalTagPOSE(apriltag_detection_t* det, TagConfig feimaTagConfig, apriltag_detection_info_t infoDetection, YFeimaTagStruct* FeimaTagOutput, TagInfo* tempTagInfo, apriltag_pose_t* pose);
+bool ParseAlgoParamFile(string strSettingPath, apriltag_detector_t* td);
+bool ParseParamFile(string strSettingPath,CameraConfig* feimaCameraConfig,TagConfig* tagConfig);

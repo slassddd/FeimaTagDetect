@@ -5,13 +5,63 @@
     "version": "0.2.0",
     "configurations": [
         {
-            "name": "FeimaTag g++",
+            "name": "FeimaTag baodi",
             "type": "cppdbg",
             "request": "launch",
             "program": "/home/sl/Desktop/software/FeimaTag/build/opencv_demo",
             "args": [
                 "./configFiles/p640_480.yaml",
                 "./demo/v_determine_axis.avi"
+            ],
+            "stopAtEntry": false,
+            "cwd": "/home/sl/Desktop/software/FeimaTag/",
+            "environment": [],
+            "externalConsole": false,
+            "MIMode": "gdb",
+            "setupCommands": [
+                {
+                    "description": "Enable pretty-printing for gdb",
+                    "text": "-enable-pretty-printing",
+                    "ignoreFailures": true
+                }
+            ],
+            "preLaunchTask": "FeimaTag Build",
+            "miDebuggerPath": "/usr/bin/gdb"
+        },
+        {
+            "name": "FeimaTag v1000",
+            "type": "cppdbg",
+            "request": "launch",
+            "program": "/home/sl/Desktop/software/FeimaTag/build/opencv_demo",
+            "args": [
+                "./configFiles/p640_480.yaml",
+                "./demo/v1000_april.avi",
+                "9",
+                "15"
+            ],
+            "stopAtEntry": false,
+            "cwd": "/home/sl/Desktop/software/FeimaTag/",
+            "environment": [],
+            "externalConsole": false,
+            "MIMode": "gdb",
+            "setupCommands": [
+                {
+                    "description": "Enable pretty-printing for gdb",
+                    "text": "-enable-pretty-printing",
+                    "ignoreFailures": true
+                }
+            ],
+            "preLaunchTask": "FeimaTag Build",
+            "miDebuggerPath": "/usr/bin/gdb"
+        },
+        {
+            "name": "FeimaTag image",
+            "type": "cppdbg",
+            "request": "launch",
+            "program": "/home/sl/Desktop/software/FeimaTag/build/opencv_demo",
+            "args": [
+                "./configFiles/p640_480.yaml",
+                "./demo/syn_tagCustom48h12_tagCustom48h12_tagCustom48h12.png",
             ],
             "stopAtEntry": false,
             "cwd": "/home/sl/Desktop/software/FeimaTag/",

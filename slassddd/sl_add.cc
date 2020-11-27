@@ -332,10 +332,72 @@ bool CalTagPOSE(apriltag_detection_t* det, TagConfig feimaTagConfig, apriltag_de
         }                
         *tempTagInfo = FeimaTagOutput->Tagl;
     }
-    // if ((!FeimaTagOutput->Tags.isDetect) && (!FeimaTagOutput->Tagm.isDetect) && (!FeimaTagOutput->Tagl.isDetect)){
-    //     cout << "unexpected tag is detected!" << endl;
-    //     isContinue = true;
-    //     return isContinue;
-    // }
-    // return isContinue;
+}
+// Parse algorithm parameters from yaml file
+bool ParseAlgoParamFile(string strSettingPath, apriltag_detector_t* td){
+    bool isParamMiss = false;
+    cv::FileStorage fSettings(strSettingPath, cv::FileStorage::READ);
+
+    cv::FileNode node;
+    node = fSettings["AlgoParam.debug"];
+    if(!node.empty() && node.isInt())
+    {
+        td->debug = node.operator int();
+    }
+    else
+    {
+        std::cerr << "AlgoParam.debug doesn't exist or is not an integer number" << std::endl;
+        isParamMiss = true;
+    }
+
+    node = fSettings["AlgoParam.threads"];
+    if(!node.empty() && node.isInt())
+    {
+        td->nthreads = node.operator int();
+    }
+    else
+    {
+        std::cerr << "AlgoParam.threads doesn't exist or is not an integer number" << std::endl;
+        isParamMiss = true;
+    }
+
+    node = fSettings["AlgoParam.decimate"];
+    if(!node.empty() && node.isReal())
+    {
+        td->quad_decimate = node.real();
+    }
+    else
+    {
+        std::cerr << "AlgoParam.decimate doesn't exist or is not an real number" << std::endl;
+        isParamMiss = true;
+    }  
+
+    node = fSettings["AlgoParam.blur"];
+    if(!node.empty() && node.isReal())
+    {
+        td->quad_sigma = node.real();
+    }
+    else
+    {
+        std::cerr << "AlgoParam.blur doesn't exist or is not an real number" << std::endl;
+        isParamMiss = true;
+    }    
+
+    node = fSettings["AlgoParam.refine_edges"];
+    if(!node.empty() && node.isInt())
+    {
+        td->refine_edges = node.operator int();
+    }
+    else
+    {
+        std::cerr << "AlgoParam.refine_edges doesn't exist or is not an integer number" << std::endl;
+        isParamMiss = true;
+    }    
+
+    if(isParamMiss)
+    {
+        return false;
+    }
+
+    return true; 
 }

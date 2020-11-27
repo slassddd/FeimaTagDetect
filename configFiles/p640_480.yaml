@@ -1,10 +1,10 @@
 %YAML:1.0
-
+# camera parameters
 Camera.fx: 650.0
 Camera.fy: 650.0
 Camera.cx: 320.0
 Camera.cy: 240.0
-
+# Tag parameters
 Tag.familyNameTags: "tag36h11"
 Tag.familyNameTagm: "tagCustom48h12"
 Tag.familyNameTagl: "tagCustom48h12"
@@ -14,3 +14,11 @@ Tag.sizeTagl: 0.3
 Tag.idTags: 225
 Tag.idTagm: 224
 Tag.idTagl: 223
+# Algorithm parameters
+# AlgoParam.help: 0
+AlgoParam.debug: 0
+# AlgoParam.quiet: 0
+AlgoParam.threads: 2
+AlgoParam.decimate: 2.0
+AlgoParam.blur: 0.0
+AlgoParam.refine_edges: 0

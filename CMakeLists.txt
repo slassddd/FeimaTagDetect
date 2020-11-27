@@ -4,6 +4,9 @@ find_package(OpenCV QUIET)
 
 include_directories(.)
 aux_source_directory(common COMMON_SRC) 
+# SLASSDDD
+aux_source_directory(slassddd SLASSDDD_SRC) 
+# 
 
 set(APRILTAG_SRCS apriltag.c apriltag_pose.c apriltag_quad_thresh.c)
 
@@ -13,7 +16,8 @@ set(CMAKE_BUILD_TYPE Debug)
 # Library
 file(GLOB TAG_FILES ${PROJECT_SOURCE_DIR}/tag*.c)
 set_source_files_properties(SOURCE ${TAG_FILES} PROPERTIES COMPILE_FLAGS -O0)
-add_library(${PROJECT_NAME} SHARED ${APRILTAG_SRCS} ${COMMON_SRC} ${TAG_FILES})
+add_library(${PROJECT_NAME} SHARED ${APRILTAG_SRCS} ${COMMON_SRC} ${TAG_FILES} slassddd/sl_disp.c)
+
 if (MSVC)
     # FindThreads will not find pthread.h with MSVC
     # winmm is necessary for __imp_timeGetTime
@@ -108,7 +112,7 @@ target_link_libraries(apriltag_demo apriltag)
 
 # opencv_demo
 if(OpenCV_FOUND)
-    add_executable(opencv_demo example/opencv_demo.cc)
+    add_executable(opencv_demo example/opencv_demo.cc ${SLASSDDD_SRC})
     target_link_libraries(opencv_demo apriltag ${OpenCV_LIBRARIES})
     set_target_properties(opencv_demo PROPERTIES CXX_STANDARD 11)
     install(TARGETS opencv_demo RUNTIME DESTINATION bin)

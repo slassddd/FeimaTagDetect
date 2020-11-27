@@ -1,4 +1,4 @@
-#include "sl_add.hpp"
+#include "sl_disp.h"
 
 // ���Ժ���
 int testadd(int a, int b) {
@@ -49,50 +49,4 @@ void dcm2angle(float dcm[9], int type, float* rolld, float* pitchd, float* yawd)
 void disp_apriltag_detection_t(apriltag_detection_t* det, int idx, char spaceStr[]) {
     printf("%s tag %d:\t%s\t\tNumber( %d )\t\tHamming( %d )\t\tMargin( %.2f )\n", spaceStr, idx, det->family->name, det->id, det->hamming, det->decision_margin);
     disp_H(det->H,"");
-}
-
-// caculate frame rate
-void cal_frame_rate()
-{
-    // static idx = 0;
-    // idx ++;
-    // utime_now(e)
-}
-
-//
-void resetTagInfo(struct TagInfo* tagInfo){
-    for (int i = 0; i != 3; i++){
-        tagInfo->tcl[i] = 0.0;
-        tagInfo->eulerdcl[i] = 0.0;  
-    }
-    for (int i = 0; i != 9; i++){
-        tagInfo->Rcl[i] = 0.0;  
-    }
-    tagInfo->isDetect = false;
-}
-
-// void resetTagInfo(struct TagInfo tagInfo){
-//     for (int i = 0; i != 3; i++){
-//         tagInfo.tcl[i] = 0.0;
-//         tagInfo.eulerdcl[i] = 0.0;  
-//     }
-//     for (int i = 0; i != 9; i++){
-//         tagInfo.Rcl[i] = 0.0;  
-//     }
-//     tagInfo.isDetect = false;
-// }
-
-//
-void initYFeimaTagStruct(struct YFeimaTagStruct* FeimaTagOutput){
-    resetTagInfo(&FeimaTagOutput->Tags);
-    resetTagInfo(&FeimaTagOutput->Tagm);
-    resetTagInfo(&FeimaTagOutput->Tagl);
-    FeimaTagOutput->nDetect = 0;
-    FeimaTagOutput->frameRate = 0;    
-    FeimaTagOutput->idxValid = 0;
-    FeimaTagOutput->idxInvalid = 0;
-    FeimaTagOutput->validFlag = false;
-    FeimaTagOutput->timePerFrame = 0.0;
-    FeimaTagOutput->isCameraOpen = false;    
-    
 }

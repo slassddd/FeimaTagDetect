@@ -215,7 +215,7 @@ int main(int argc, char* argv[])
             // ||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||
             // ||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||
             // ||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||
-
+            FeimaTagOutput.time = time_sec;
             FeimaTagOutput.timePerFrame = std::chrono::duration_cast<std::chrono::duration<double> >(t2 - t1).count();
             if(duPerFrame>1)
             {
@@ -237,6 +237,7 @@ int main(int argc, char* argv[])
                 FeimaTagOutput.idxInvalid ++;
                 FeimaTagOutput.validFlag = false;
             }
+            FeimaTagOutput.idxAll ++;
             // 调试START
             char spaceStrPerFrame2tab[] = "\t\t ";
             char spaceStrPerFrame3tab[] = "\t\t\t ";

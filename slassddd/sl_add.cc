@@ -14,6 +14,8 @@ void resetTagInfo(TagInfo* tagInfo){
 }
 // 
 void initYFeimaTagStruct(YFeimaTagStruct* FeimaTagOutput){
+    FeimaTagOutput->time = 0.0;
+    FeimaTagOutput->timegps = 0;
     resetTagInfo(&FeimaTagOutput->Tags);
     resetTagInfo(&FeimaTagOutput->Tagm);
     resetTagInfo(&FeimaTagOutput->Tagl);
@@ -21,6 +23,7 @@ void initYFeimaTagStruct(YFeimaTagStruct* FeimaTagOutput){
     FeimaTagOutput->frameRate = 0;    
     FeimaTagOutput->idxValid = 0;
     FeimaTagOutput->idxInvalid = 0;
+    FeimaTagOutput->idxAll = 0;
     FeimaTagOutput->validFlag = false;
     FeimaTagOutput->timePerFrame = 0.0;
     FeimaTagOutput->isCameraOpen = false;    

@@ -33,6 +33,8 @@ typedef struct UFeimaTagStruct {
 }UFeimaTagStruct;
 // Data that need send to flight controller
 typedef struct YFeimaTagStruct {
+    float time;
+    uint64 timegps;
     TagInfo Tags; // small tag
     TagInfo Tagm; // middle tag
     TagInfo Tagl; // large tag
@@ -40,6 +42,7 @@ typedef struct YFeimaTagStruct {
     int frameRate; 
     int idxValid; // number of frames in which at least 1 tag is detected
     int idxInvalid;
+    int idxAll;
     bool validFlag; //
     double timePerFrame;
     bool isCameraOpen;
